@@ -1,62 +1,36 @@
-# Para capturar os quadros
+# importe a biblioteca opencv 
 import cv2
 
-# Para processar o array de imagens
-import numpy as np
+#Carregue o arquivo do classificador cascade
+face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml') 
 
-# Para carregar o modelo previamente treinado
-import tensorflow as tf
+# Defina um objeto VideoCapture
+vid = cv2.VideoCapture(0)
 
-# Anexando a câmera indexada como 0, com o software da aplicação
-camera = cv2.VideoCapture(0)
+while(True):
+   
+    # Capture o vídeo quadro a quadro
+    ret, frame = vid.read()
 
-# Carregando o modelo previamente treinado: keras_model.h5
-mymodel = tf.keras.models.load_model('keras_model.h5')
+    # Converta para escala de cinza
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-# Loop infinito
-while True:
+    # Detecte os rostos
+    faces = face_cascade.detectMultiScale(gray, 1.1, 5)
 
-	# Lendo / requisitando um quadro da câmera 
-	status , frame = camera.read()
+    # Desenhe o retângulo ao redor de cada rosto
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        
+    # Exiba o quadro resultante
+    cv2.imshow('frame', frame)
+      
+    # Saia da tela ao pressionar a barra de espaço
+    if cv2.waitKey(25) == 32:
+        break
+  
+# Após o loop, libere o objeto capturado
+vid.release()
 
-	# Se tivemos sucesso ao ler o quadro
-	if status:
-
-		# Inverta o quadro
-		frame = cv2.flip(frame , 1)
-
-		# Redimensione o quadro
-		resized_frame = cv2.resize(frame , (224,224))
-
-		# Expanda a dimensão do array junto com o eixo 0
-		resized_frame = np.expand_dims(resized_frame , axis = 0)
-
-		# Normalize para facilitar o processamento
-		resized_frame = resized_frame / 255
-
-		# Obtendo previsões do modelo
-		predictions = mymodel.predict(resized_frame)
-
-		# Convertendo os dados do array para percentual de confiança 
-		rock = int(predictions[0][0]*100)
-		paper = int(predictions[0][1]*100)
-		scissor = int(predictions[0][2]*100)
-
-		# Imprimindo o percentual de confiança
-		print(f"Pedra: {rock} %, Papel: {paper} %, Tesoura: {scissor} %")
-
-		# Exibindo os quadros capturados
-		cv2.imshow('feed' , frame)
-
-		# Aguardando 1ms
-		code = cv2.waitKey(1)
-		
-		# Se a barra de espaço foi pressionada, interrompa o loop
-		if code == 32:
-			break
-
-# Libere a câmera do software da aplicação
-camera.release()
-
-# Feche a janela aberta
+# Destrua todas as telas
 cv2.destroyAllWindows()
